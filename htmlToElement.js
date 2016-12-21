@@ -15,7 +15,7 @@ var PARAGRAPH_BREAK = '\n\n'
 var BULLET = '\u2022 '
 
 function htmlToElement(rawHtml, opts, done) {
-  function domToElement(dom, parent) {
+  function domToElement(dom, parentStyle) {
     if (!dom) return null
 
     return dom.map((node, index, list) => {
@@ -27,7 +27,7 @@ function htmlToElement(rawHtml, opts, done) {
 
       if (node.type == 'text') {
         return (
-          <Text key={index} style={parent ? opts.styles[parent.name] : null}>
+          <Text key={index} style={parentStyle}>
             {entities.decodeHTML(node.data)}
           </Text>
         )
@@ -56,12 +56,14 @@ function htmlToElement(rawHtml, opts, done) {
         if (node.name == 'a' && node.attribs && node.attribs.href) {
           linkPressHandler = () => opts.linkHandler(entities.decodeHTML(node.attribs.href))
         }
+      
+        const childStyle = Array.isArray(parentStyle) ? parentStyle.concat([opts.styles[node.name]]) : [parentStyle, opts.styles[node.name]];
 
         return (
           <Text key={index} onPress={linkPressHandler}>
             {node.name == 'pre' ? LINE_BREAK : null}
             {node.name == 'li' ? BULLET : null}
-            {domToElement(node.children, node)}
+            {domToElement(node.children, childStyle)}
             {node.name == 'br' || node.name == 'li' ? LINE_BREAK : null}
             {node.name == 'p' && index < list.length - 1 ? PARAGRAPH_BREAK : null}
             {node.name == 'h1' || node.name == 'h2' || node.name == 'h3' || node.name == 'h4' || node.name == 'h5' ? LINE_BREAK : null}
